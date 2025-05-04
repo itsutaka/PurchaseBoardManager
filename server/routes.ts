@@ -13,7 +13,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   requestsRouter.get("/", async (req: Request, res: Response) => {
     try {
       const requests = await storage.getAllPurchaseRequests();
-      res.json(requests);
+      // 取得所有留言
+      const allComments = Array.from(storage['comments'].values());
+      // 將每個 request 加上 commentCount
+      const requestsWithCommentCount = requests.map(request => {
+        const commentCount = allComments.filter(c => c.requestId === request.id).length;
+        return { ...request, commentCount };
+      });
+      res.json(requestsWithCommentCount);
     } catch (error) {
       console.error("Error fetching requests:", error);
       res.status(500).json({ message: "Failed to fetch purchase requests" });
