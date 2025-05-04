@@ -1375,3 +1375,260 @@ requestsRouter.get("/", async (req: Request, res: Response) => {
 
 ---
 
+_**User**_
+
+id": 1,
+        "title": "藍芽鍵盤",
+        "description": "辦公室需要新的藍芽鍵盤，最好是可以多設備切換的類型",
+        "requester": "王小明",
+        "createdAt": "2025-05-03T15:15:30.773Z",
+        "isPurchased": false,
+        "purchasedBy": null,
+        "purchasedAt": null,
+        "purchaseNote": null,
+        "commentCount": 3
+    },
+    {
+        "id": 2,
+        "title": "投影機",
+        "description": "會議室需要一台新的投影機，目前的已經故障無法使用",
+        "requester": "李華",
+        "createdAt": "2025-05-02T15:15:30.773Z",
+        "isPurchased": true,
+        "purchasedBy": "王小明",
+        "purchasedAt": "2025-05-04T15:15:30.773Z",
+        "purchaseNote": "已經購買並安裝在會議室",
+        "commentCount": 0
+    },
+    {
+        "id": 3,
+        "title": "辦公桌",
+        "description": "需要兩張可調高度的辦公桌，供新進同仁使用",
+        "requester": "張小明",
+        "createdAt": "2025-05-04T15:15:30.773Z",
+        "isPurchased": false,
+        "purchasedBy": null,
+        "purchasedAt": null,
+        "purchaseNote": null,
+        "commentCount": 1
+    },
+    {
+        "id": 4,
+        "title": "test",
+        "description": "testtest",
+        "requester": "test",
+        "createdAt": "2025-05-04T15:16:27.300Z",
+        "isPurchased": true,
+        "purchasedBy": "test",
+        "purchasedAt": "2025-05-04T00:00:00.000Z",
+        "purchaseNote": null,
+        "commentCount": 2
+
+修改之後commentCount有正確紀錄，但是前端依然還是沒有正確的顯示資訊
+
+---
+
+_**Assistant**_
+
+你後端 `/api/requests` 已經正確回傳 `commentCount`，但前端依然沒有正確顯示留言數，這通常有以下幾個可能：
+
+---
+
+## 1. 前端取用的欄位名稱不正確
+
+請確認前端顯示留言數的地方，**取用的是 `request.commentCount`**，而不是 `request.comments.length` 或其他欄位。
+
+### 範例（React）：
+```tsx
+<span>{request.commentCount}</span>
+```
+
+---
+
+## 2. 前端型別定義未包含 commentCount
+
+如果你有 TypeScript 型別（如 `PurchaseRequest`），但沒有加上 `commentCount`，則 TS 會忽略這個欄位，導致畫面不顯示。
+
+### 解決方式
+請在前端型別定義加上 `commentCount`：
+
+```ts
+export interface PurchaseRequest {
+  id: number;
+  title: string;
+  // ...其他欄位
+  commentCount: number; // <--- 新增這行
+}
+```
+
+---
+
+## 3. 前端快取未刷新
+
+你已經有 `queryClient.invalidateQueries({ queryKey: ['/api/requests'] })`，但如果前端元件沒有正確重新 render，畫面還是會顯示舊資料。  
+請確認：
+- 有正確使用 React Query 的 `useQuery` 取得 `/api/requests`。
+- 沒有用 local state 快取舊資料。
+
+---
+
+## 4. 前端資料結構誤用
+
+請檢查你在 `RequestCard` 或留言數顯示元件，是否正確取得 `commentCount`，而不是用錯資料來源。
+
+---
+
+## 5. 除錯建議
+
+1. **在 RequestCard 或留言數顯示處加上 console.log(request)：**
+   ```tsx
+   console.log(request);
+   ```
+   確認畫面 render 時，`commentCount` 是否有正確傳入。
+
+2. **檢查 props 傳遞路徑**  
+   確認 `RequestCard` 或相關元件的 props 沒有被覆蓋或遺漏。
+
+---
+
+## 小結
+
+- 請確認前端顯示留言數的地方，**直接取用 `request.commentCount`**。
+- 型別定義要包含 `commentCount`。
+- 若還是沒顯示，請貼出 `RequestCard` 或留言數顯示的程式碼片段，我可以幫你檢查細節！
+
+---
+
+如需具體程式碼修改範例，請提供你顯示留言數的元件程式碼！
+
+---
+
+_**User**_
+
+請確認前端顯示留言數的地方，取用的是 request.commentCount，而不是 request.comments.length 或其他欄位。
+
+---
+
+_**Assistant**_
+
+<details>
+            <summary>Searched codebase "commentCount" • **0** results</summary>
+        
+No results found
+</details>
+
+---
+
+<details>
+            <summary>Searched codebase "commentCount" • **25** results</summary>
+        
+| File | Lines |
+|------|-------|
+| `client/src/lib/types.ts` | L17-22 |
+| `client/src/components/modals/CommentModal.tsx` | L122-178 |
+| `client/src/components/modals/CommentModal.tsx` | L201-223 |
+| `client/src/components/modals/CommentModal.tsx` | L78-122 |
+| `client/src/components/modals/CommentModal.tsx` | L245-280 |
+| `client/src/lib/types.ts` | L22-26 |
+| `client/src/components/modals/CommentModal.tsx` | L1-49 |
+| `client/src/components/modals/CommentModal.tsx` | L223-245 |
+| `client/src/components/requestBoard/index.tsx` | L1-44 |
+| `client/src/components/requestBoard/index.tsx` | L44-104 |
+| `client/src/components/modals/CommentModal.tsx` | L49-78 |
+| `client/src/components/modals/CommentModal.tsx` | L280-303 |
+| `client/src/components/modals/CommentModal.tsx` | L303-322 |
+| `client/src/components/modals/CommentModal.tsx` | L322-358 |
+| `client/src/components/modals/CommentModal.tsx` | L178-201 |
+| `client/src/lib/types.ts` | L26-28 |
+| `client/src/pages/home.tsx` | L1-53 |
+| `client/src/components/requestBoard/RequestCard.tsx` | L1-26 |
+| `client/src/hooks/use-request-board.tsx` | L1-19 |
+| `client/src/lib/types.ts` | L30-39 |
+| `client/src/hooks/use-toast.ts` | L16-30 |
+| `client/src/hooks/use-request-board.tsx` | L19-92 |
+| `client/src/lib/types.ts` | L1-17 |
+| `client/src/components/requestBoard/RequestCard.tsx` | L154-201 |
+| `client/src/components/requestBoard/FilterBar.tsx` | L67-85 |
+
+</details>
+
+---
+
+Read file: client/src/components/requestBoard/RequestCard.tsx
+
+---
+
+你在 `client/src/components/requestBoard/RequestCard.tsx` 中，**留言數的顯示已經正確取用 `request.commentCount`**：
+
+```tsx
+<MessageSquare className="h-4 w-4 mr-1" />
+<span>{request.commentCount}</span>
+```
+
+這表示前端顯示留言數的地方是正確的。
+
+---
+
+## 但你在 `client/src/components/requestBoard/index.tsx` 有這段：
+
+```ts
+const requestsWithComments = requests.map((request: any) => {
+  const commentCount = comments?.filter((comment: any) => 
+    comment.requestId === request.id
+  ).length || 0;
+  return {
+    ...request,
+    commentCount
+  };
+});
+```
+
+這裡**會覆蓋掉後端回傳的 commentCount**，而且是用 `/api/comments` 全部留言再前端計算，這會導致即使後端正確回傳，前端還是用自己的計算結果，造成顯示異常！
+
+---
+
+## 解決方法
+
+**只要直接用後端回傳的 `request.commentCount`，不要再前端自己算一次！**
+
+### 請修改 `client/src/components/requestBoard/index.tsx`：
+
+找到這段 useEffect，將其簡化如下：
+
+```ts
+useEffect(() => {
+  if (requests && !isLoading) {
+    // 不要再前端重新計算 commentCount，直接用後端回傳的
+    let filteredRequests = requests;
+    if (filter === 'pending') {
+      filteredRequests = requests.filter((r: any) => !r.isPurchased);
+    } else if (filter === 'purchased') {
+      filteredRequests = requests.filter((r: any) => r.isPurchased);
+    }
+
+    let sortedRequests = [...filteredRequests];
+    if (sort === 'newest') {
+      sortedRequests.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    } else if (sort === 'oldest') {
+      sortedRequests.sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    } else if (sort === 'comments') {
+      sortedRequests.sort((a, b) => b.commentCount - a.commentCount);
+    }
+
+    setProcessedRequests(sortedRequests);
+  }
+}, [requests, filter, sort, isLoading]);
+```
+
+---
+
+## 小結
+
+- 
+
+---
+

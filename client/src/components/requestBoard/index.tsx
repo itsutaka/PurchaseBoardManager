@@ -45,27 +45,14 @@ export function RequestBoard() {
 
   useEffect(() => {
     if (requests && !isLoading) {
-      // Map requests to include comment counts
-      const requestsWithComments = requests.map((request: any) => {
-        const commentCount = comments?.filter((comment: any) => 
-          comment.requestId === request.id
-        ).length || 0;
-        
-        return {
-          ...request,
-          commentCount
-        };
-      });
-
-      // Filter requests based on filter state
-      let filteredRequests = requestsWithComments;
+      // 不要再前端重新計算 commentCount，直接用後端回傳的
+      let filteredRequests = requests;
       if (filter === 'pending') {
-        filteredRequests = requestsWithComments.filter(r => !r.isPurchased);
+        filteredRequests = requests.filter((r: any) => !r.isPurchased);
       } else if (filter === 'purchased') {
-        filteredRequests = requestsWithComments.filter(r => r.isPurchased);
+        filteredRequests = requests.filter((r: any) => r.isPurchased);
       }
 
-      // Sort requests based on sort state
       let sortedRequests = [...filteredRequests];
       if (sort === 'newest') {
         sortedRequests.sort((a, b) => 
@@ -81,7 +68,7 @@ export function RequestBoard() {
 
       setProcessedRequests(sortedRequests);
     }
-  }, [requests, comments, filter, sort, isLoading, isCommentsLoading]);
+  }, [requests, filter, sort, isLoading]);
 
   // Handle filter and sort changes
   const handleFilterChange = (newFilter: RequestFilterOption) => {
