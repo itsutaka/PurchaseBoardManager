@@ -39,11 +39,14 @@ export const insertPurchaseRequestSchema = createInsertSchema(purchaseRequests).
   purchaseNote: true,
 });
 
-export const purchaseUpdateSchema = createInsertSchema(purchaseRequests).pick({
-  isPurchased: true,
-  purchasedBy: true,
-  purchasedAt: true,
-  purchaseNote: true,
+export const purchaseUpdateSchema = z.object({
+  isPurchased: z.boolean(),
+  purchasedBy: z.string(),
+  purchasedAt: z.preprocess(
+    (val) => (typeof val === "string" ? new Date(val) : val),
+    z.date()
+  ),
+  purchaseNote: z.string().nullable().optional(),
 });
 
 // Comments schema

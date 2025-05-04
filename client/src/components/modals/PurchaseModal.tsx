@@ -74,7 +74,7 @@ export function PurchaseModal({ open, onOpenChange, requestId }: PurchaseModalPr
         purchasedAt: new Date(values.purchasedAt),
         purchaseNote: values.purchaseNote || null
       };
-      
+      console.log("送出 purchaseData:", purchaseData, typeof purchaseData.purchasedAt, purchaseData.purchasedAt instanceof Date);
       return apiRequest("PATCH", `/api/requests/${requestId}/purchase`, purchaseData);
     },
     onSuccess: () => {
