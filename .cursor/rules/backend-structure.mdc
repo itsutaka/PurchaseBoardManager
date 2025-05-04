@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 後端結構說明
+
+後端原始碼位於 [server](mdc:server) 目錄，主要檔案如下：
+
+- [index.ts](mdc:server/index.ts)：後端伺服器啟動與設定。
+- [routes.ts](mdc:server/routes.ts)：API 路由定義。
+- [storage.ts](mdc:server/storage.ts)：資料儲存與存取邏輯。
+- [vite.ts](mdc:server/vite.ts)：Vite 相關設定。

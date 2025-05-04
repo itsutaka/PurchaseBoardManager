@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 共用模組結構說明
+
+[shared](mdc:shared) 目錄用於存放前後端共用的 TypeScript 型別與 schema 定義。
+
+- [schema.ts](mdc:shared/schema.ts)：定義資料結構與型別，供前後端共用。

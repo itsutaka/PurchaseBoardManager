@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 前端結構說明
+
+前端原始碼位於 [client/src](mdc:client/src) 目錄，主要結構如下：
+
+- [main.tsx](mdc:client/src/main.tsx)：前端應用程式的進入點。
+- [App.tsx](mdc:client/src/App.tsx)：主要 React 元件。
+- [index.css](mdc:client/src/index.css)：全域樣式檔。
+- [components](mdc:client/src/components)：共用 React 元件。
+- [pages](mdc:client/src/pages)：頁面元件。
+- [hooks](mdc:client/src/hooks)：自訂 React hooks。
+- [lib](mdc:client/src/lib)：工具與輔助函式。

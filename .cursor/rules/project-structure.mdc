@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 專案結構說明
+
+本專案主要分為三個部分：前端、後端與共用模組。
+
+- 前端程式碼位於 [client/src](mdc:client/src) 目錄，入口為 [client/src/main.tsx](mdc:client/src/main.tsx)。
+- 後端程式碼位於 [server](mdc:server) 目錄，主要檔案有 [server/index.ts](mdc:server/index.ts)、[server/routes.ts](mdc:server/routes.ts) 及 [server/storage.ts](mdc:server/storage.ts)。
+- 共用資料結構定義於 [shared/schema.ts](mdc:shared/schema.ts)。
+
+專案根目錄下的 [package.json](mdc:package.json) 管理所有依賴與腳本。
