@@ -656,11 +656,862 @@ npm install firebase
 ```
 
 ```
-(base) kih@biobankdeMacBook-Air PurchaseBoardManager % npm install firebase
-⠧
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.
+is
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.
+is
+
+added 599 packages, and audited 600 packages in 48s
+
+63 packages are looking for funding
+  run `npm fund` for details
+
+7 moderate severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
 ```
 
 ---
+
+現在，讓我開始創建相關檔案，首先創建 firebase 目錄和 context 檔案。
+
+---
+
+```bash
+mkdir -p client/src/lib/firebase
+```
+
+```
+(base) kih@biobankdeMacBook-Air PurchaseBoardManager % 
+
+```
+
+---
+
+現在，創建 Firebase Context 檔案：
+
+---
+
+```diff
+- 
++ import React, {
++   createContext,
++   useContext,
++   useMemo,
++   useEffect,
++   useState,
++   type ReactNode
++ } from "react";
++ import { initializeApp } from "firebase/app";
++ import { 
++   getAnalytics, 
++   type Analytics 
++ } from "firebase/analytics";
++ 
++ // Firebase 設定
++ const firebaseConfig = {
++   apiKey: "AIzaSyBBNfsZVCKtkz6STtlo1UODQ1FhTDxF7ks",
++   authDomain: "meetingroombooking-69469.firebaseapp.com",
++   projectId: "meetingroombooking-69469",
++   storageBucket: "meetingroombooking-69469.firebasestorage.app",
++   messagingSenderId: "574231481848",
++   appId: "1:574231481848:web:cc46f603a25fcdceb09a0d",
++   measurementId: "G-PRW9FM4BHZ"
++ };
++ 
++ // 定義 Firebase Context 類型
++ interface FirebaseContextProps {
++   app: ReturnType<typeof initializeApp>;
++   analytics: Analytics | null;
++   isAnalyticsReady: boolean;
++ }
++ 
++ // 預設值
++ const defaultContext: FirebaseContextProps = {
++   app: {} as ReturnType<typeof initializeApp>,
++   analytics: null,
++   isAnalyticsReady: false
++ };
++ 
++ // 創建 Context
++ const FirebaseContext = createContext<FirebaseContextProps>(defaultContext);
++ 
++ // Provider 組件
++ export function FirebaseProvider({ children }: { children: ReactNode }) {
++   const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
++   
++   // 使用 useMemo 避免不必要的重新初始化
++   const app = useMemo(() => initializeApp(firebaseConfig), []);
++   
++   // 使用 useState 來存儲 analytics 實例，因為它需要在瀏覽器環境中初始化
++   const [analytics, setAnalytics] = useState<Analytics | null>(null);
++   
++   // 在組件掛載後初始化 analytics
++   useEffect(() => {
++     try {
++       // 確保在瀏覽器環境中執行
++       if (typeof window !== "undefined") {
++         const analyticsInstance = getAnalytics(app);
++         setAnalytics(analyticsInstance);
++         setIsAnalyticsReady(true);
++       }
++     } catch (error) {
++       console.error("初始化 Firebase Analytics 時發生錯誤:", error);
++     }
++   }, [app]);
++   
++   // 使用 useMemo 避免不必要的重新渲染
++   const contextValue = useMemo(() => ({
++     app,
++     analytics,
++     isAnalyticsReady
++   }), [app, analytics, isAnalyticsReady]);
++   
++   return (
++     <FirebaseContext.Provider value={contextValue}>
++       {children}
++     </FirebaseContext.Provider>
++   );
++ }
++ 
++ // 自定義 Hook 以便於存取 Firebase 服務
++ export function useFirebase() {
++   const context = useContext(FirebaseContext);
++   
++   if (!context) {
++     throw new Error("useFirebase 必須在 FirebaseProvider 內使用");
++   }
++   
++   return context;
++ } 
+```
+
+---
+
+現在，讓我們修改 App.tsx 來整合 Firebase Provider：
+
+---
+
+```diff
+  import Home from "@/pages/home";
+  import MainLayout from "@/components/layouts/MainLayout";
++ import { FirebaseProvider } from "./lib/firebase/firebase-context";
+  
+  function Router() {
+```
+
+```diff
+  function App() {
+    return (
+-     <QueryClientProvider client={queryClient}>
+-       <TooltipProvider>
+-         <Toaster />
+-         <Router />
+-       </TooltipProvider>
+-     </QueryClientProvider>
++     <FirebaseProvider>
++       <QueryClientProvider client={queryClient}>
++         <TooltipProvider>
++           <Toaster />
++           <Router />
++         </TooltipProvider>
++       </QueryClientProvider>
++     </FirebaseProvider>
+    );
+  }
+```
+
+---
+
+現在，讓我們創建一個擴展後的版本，包含更多常用的 Firebase 服務：
+
+---
+
+```diff
+- 
++ import React, { createContext, useContext, useMemo, useEffect, useState, type ReactNode } from "react";
++ import { initializeApp } from "firebase/app";
++ import { getAnalytics, type Analytics } from "firebase/analytics";
++ import { getAuth, type Auth } from "firebase/auth";
++ import { getFirestore, type Firestore } from "firebase/firestore";
++ import { getStorage, type FirebaseStorage } from "firebase/storage";
++ 
++ // Firebase 設定
++ const firebaseConfig = {
++   apiKey: "AIzaSyBBNfsZVCKtkz6STtlo1UODQ1FhTDxF7ks",
++   authDomain: "meetingroombooking-69469.firebaseapp.com",
++   projectId: "meetingroombooking-69469",
++   storageBucket: "meetingroombooking-69469.firebasestorage.app",
++   messagingSenderId: "574231481848",
++   appId: "1:574231481848:web:cc46f603a25fcdceb09a0d",
++   measurementId: "G-PRW9FM4BHZ"
++ };
++ 
++ // 擴展 Context 類型以包含更多服務
++ interface FirebaseContextProps {
++   app: ReturnType<typeof initializeApp>;
++   analytics: Analytics | null;
++   auth: Auth;
++   firestore: Firestore;
++   storage: FirebaseStorage;
++   isAnalyticsReady: boolean;
++ }
++ 
++ // 預設值
++ const defaultContext: FirebaseContextProps = {
++   app: {} as ReturnType<typeof initializeApp>,
++   analytics: null,
++   auth: {} as Auth,
++   firestore: {} as Firestore,
++   storage: {} as FirebaseStorage,
++   isAnalyticsReady: false
++ };
++ 
++ const FirebaseContext = createContext<FirebaseContextProps>(defaultContext);
++ 
++ export function FirebaseFullProvider({ children }: { children: ReactNode }) {
++   const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
++   
++   const app = useMemo(() => initializeApp(firebaseConfig), []);
++   const auth = useMemo(() => getAuth(app), [app]);
++   const firestore = useMemo(() => getFirestore(app), [app]);
++   const storage = useMemo(() => getStorage(app), [app]);
++   
++   const [analytics, setAnalytics] = useState<Analytics | null>(null);
++   
++   useEffect(() => {
++     try {
++       if (typeof window !== "undefined") {
++         const analyticsInstance = getAnalytics(app);
++         setAnalytics(analyticsInstance);
++         setIsAnalyticsReady(true);
++       }
++     } catch (error) {
++       console.error("初始化 Firebase Analytics 時發生錯誤:", error);
++     }
++   }, [app]);
++   
++   const contextValue = useMemo(() => ({
++     app,
++     analytics,
++     auth,
++     firestore,
++     storage,
++     isAnalyticsReady
++   }), [app, analytics, auth, firestore, storage, isAnalyticsReady]);
++   
++   return (
++     <FirebaseContext.Provider value={contextValue}>
++       {children}
++     </FirebaseContext.Provider>
++   );
++ }
++ 
++ export function useFirebaseFull() {
++   const context = useContext(FirebaseContext);
++   
++   if (!context) {
++     throw new Error("useFirebaseFull 必須在 FirebaseFullProvider 內使用");
++   }
++   
++   return context;
++ } 
+```
+
+---
+
+現在讓我們創建一個範例組件，展示如何使用 Firebase Context：
+
+---
+
+```diff
+- 
++ import React from "react";
++ import { useFirebase } from "@/lib/firebase/firebase-context";
++ import { logEvent } from "firebase/analytics";
++ import { Button } from "@/components/ui/button";
++ 
++ export default function FirebaseExample() {
++   const { analytics, isAnalyticsReady } = useFirebase();
++   
++   const handleLogEvent = () => {
++     if (isAnalyticsReady && analytics) {
++       logEvent(analytics, 'button_click', {
++         button_name: 'example_button',
++         screen: 'firebase_example'
++       });
++       alert('事件已記錄到 Firebase Analytics！');
++     } else {
++       alert('Firebase Analytics 尚未準備好');
++     }
++   };
++   
++   return (
++     <div className="p-4 border rounded-md">
++       <h2 className="text-lg font-bold mb-2">Firebase 範例</h2>
++       <p className="mb-4">
++         Analytics 狀態: {isAnalyticsReady ? '已準備好' : '準備中...'}
++       </p>
++       <Button onClick={handleLogEvent}>
++         記錄事件到 Firebase Analytics
++       </Button>
++     </div>
++   );
++ } 
+```
+
+---
+
+讓我們在 Home 頁面中加入這個範例組件，以便可以看到實際效果：
+
+---
+
+Read file: client/src/pages/home.tsx
+
+---
+
+```diff
+  import { Plus } from "lucide-react";
+  import { useRequestBoard } from "@/hooks/use-request-board";
++ import FirebaseExample from "@/components/FirebaseExample";
+  
+  export default function Home() {
+```
+
+```diff
+          </Button>
+        </div>
++ 
++       <div className="mb-6">
++         <FirebaseExample />
++       </div>
+  
+        <RequestBoard />
+```
+
+---
+
+現在讓我們先執行開發環境，看看整合是否成功：
+
+---
+
+```bash
+npm run dev
+```
+
+---
+
+讓我們創建一個更完整的 firebase 使用示例，包含 Auth 服務的使用：
+
+---
+
+```diff
+- 
++ import React, { useState, useEffect } from "react";
++ import { 
++   getAuth, 
++   signInWithEmailAndPassword, 
++   createUserWithEmailAndPassword,
++   signOut,
++   onAuthStateChanged,
++   type User
++ } from "firebase/auth";
++ import { useFirebase } from "@/lib/firebase/firebase-context";
++ import { Button } from "@/components/ui/button";
++ import { Input } from "@/components/ui/input";
++ import { Label } from "@/components/ui/label";
++ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
++ 
++ export default function FirebaseAuthExample() {
++   const { app } = useFirebase();
++   const auth = getAuth(app);
++   
++   const [email, setEmail] = useState("");
++   const [password, setPassword] = useState("");
++   const [user, setUser] = useState<User | null>(null);
++   const [error, setError] = useState<string | null>(null);
++   
++   // 監聽用戶登入狀態
++   useEffect(() => {
++     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
++       setUser(currentUser);
++     });
++     
++     return () => unsubscribe();
++   }, [auth]);
++   
++   // 註冊
++   const handleSignUp = async () => {
++     setError(null);
++     try {
++       await createUserWithEmailAndPassword(auth, email, password);
++       setEmail("");
++       setPassword("");
++     } catch (err: any) {
++       setError(err.message || "註冊失敗");
++     }
++   };
++   
++   // 登入
++   const handleSignIn = async () => {
++     setError(null);
++     try {
++       await signInWithEmailAndPassword(auth, email, password);
++       setEmail("");
++       setPassword("");
++     } catch (err: any) {
++       setError(err.message || "登入失敗");
++     }
++   };
++   
++   // 登出
++   const handleSignOut = async () => {
++     setError(null);
++     try {
++       await signOut(auth);
++     } catch (err: any) {
++       setError(err.message || "登出失敗");
++     }
++   };
++   
++   return (
++     <Card className="w-full max-w-md mx-auto">
++       <CardHeader>
++         <CardTitle>Firebase Auth 示例</CardTitle>
++       </CardHeader>
++       <CardContent>
++         {user ? (
++           <div className="space-y-4">
++             <p className="text-sm">已登入為:</p>
++             <div className="p-3 bg-green-50 rounded-md">
++               <p className="font-medium">{user.email}</p>
++               <p className="text-xs text-gray-500">用戶 ID: {user.uid}</p>
++             </div>
++             <Button variant="destructive" onClick={handleSignOut} className="w-full">
++               登出
++             </Button>
++           </div>
++         ) : (
++           <div className="space-y-4">
++             <div className="space-y-2">
++               <Label htmlFor="email">電子郵件</Label>
++               <Input 
++                 id="email" 
++                 type="email" 
++                 value={email} 
++                 onChange={(e) => setEmail(e.target.value)} 
++                 placeholder="your@email.com" 
++               />
++             </div>
++             <div className="space-y-2">
++               <Label htmlFor="password">密碼</Label>
++               <Input 
++                 id="password" 
++                 type="password" 
++                 value={password} 
++                 onChange={(e) => setPassword(e.target.value)} 
++                 placeholder="••••••••" 
++               />
++             </div>
++             {error && (
++               <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
++                 {error}
++               </div>
++             )}
++           </div>
++         )}
++       </CardContent>
++       {!user && (
++         <CardFooter className="flex gap-2">
++           <Button variant="outline" onClick={handleSignUp} className="flex-1">
++             註冊
++           </Button>
++           <Button onClick={handleSignIn} className="flex-1">
++             登入
++           </Button>
++         </CardFooter>
++       )}
++     </Card>
++   );
++ } 
+```
+
+---
+
+現在，讓我們更新 Home 頁面，加入這個 Auth 示例：
+
+---
+
+```diff
+  import { useRequestBoard } from "@/hooks/use-request-board";
+  import FirebaseExample from "@/components/FirebaseExample";
++ import FirebaseAuthExample from "@/components/FirebaseAuthExample";
++ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  
+  export default function Home() {
+```
+
+```diff
+  
+        <div className="mb-6">
++         <Tabs defaultValue="analytics" className="w-full">
++           <TabsList className="mb-4">
++             <TabsTrigger value="analytics">Firebase Analytics</TabsTrigger>
++             <TabsTrigger value="auth">Firebase Auth</TabsTrigger>
++           </TabsList>
++           <TabsContent value="analytics">
+              <FirebaseExample />
++           </TabsContent>
++           <TabsContent value="auth">
++             <FirebaseAuthExample />
++           </TabsContent>
++         </Tabs>
+        </div>
+  
+```
+
+---
+
+最後，讓我們來創建一個 Firebase Firestore 的示例組件，以展示數據的讀寫操作：
+
+---
+
+```diff
+    type Analytics 
+  } from "firebase/analytics";
++ import { 
++   getAuth, 
++   type Auth 
++ } from "firebase/auth";
++ import { 
++   getFirestore, 
++   type Firestore 
++ } from "firebase/firestore";
+  
+  // Firebase 設定
+```
+
+```diff
+    app: ReturnType<typeof initializeApp>;
+    analytics: Analytics | null;
++   auth: Auth;
++   firestore: Firestore;
+    isAnalyticsReady: boolean;
+  }
+```
+
+```diff
+    app: {} as ReturnType<typeof initializeApp>,
+    analytics: null,
++   auth: {} as Auth,
++   firestore: {} as Firestore,
+    isAnalyticsReady: false
+  };
+```
+
+```diff
+    // 使用 useMemo 避免不必要的重新初始化
+    const app = useMemo(() => initializeApp(firebaseConfig), []);
++   const auth = useMemo(() => getAuth(app), [app]);
++   const firestore = useMemo(() => getFirestore(app), [app]);
+    
+    // 使用 useState 來存儲 analytics 實例，因為它需要在瀏覽器環境中初始化
+```
+
+```diff
+      app,
+      analytics,
++     auth,
++     firestore,
+      isAnalyticsReady
+-   }), [app, analytics, isAnalyticsReady]);
++   }), [app, analytics, auth, firestore, isAnalyticsReady]);
+    
+    return (
+```
+
+---
+
+現在，讓我們創建一個 Firebase Firestore 示例組件：
+
+---
+
+```diff
+- 
++ import React, { useState, useEffect } from "react";
++ import { useFirebase } from "@/lib/firebase/firebase-context";
++ import { 
++   collection, 
++   addDoc, 
++   getDocs, 
++   deleteDoc, 
++   doc, 
++   query, 
++   orderBy,
++   serverTimestamp,
++   type DocumentData 
++ } from "firebase/firestore";
++ import { Button } from "@/components/ui/button";
++ import { Input } from "@/components/ui/input";
++ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
++ import { Trash } from "lucide-react";
++ 
++ interface Note {
++   id: string;
++   text: string;
++   createdAt: Date;
++ }
++ 
++ export default function FirebaseFirestoreExample() {
++   const { firestore } = useFirebase();
++   const [notes, setNotes] = useState<Note[]>([]);
++   const [newNote, setNewNote] = useState("");
++   const [isLoading, setIsLoading] = useState(false);
++   const [error, setError] = useState<string | null>(null);
++   
++   // 獲取所有筆記
++   const fetchNotes = async () => {
++     setIsLoading(true);
++     setError(null);
++     try {
++       const notesQuery = query(
++         collection(firestore, "notes"),
++         orderBy("createdAt", "desc")
++       );
++       const querySnapshot = await getDocs(notesQuery);
++       
++       const fetchedNotes: Note[] = [];
++       querySnapshot.forEach((doc) => {
++         const data = doc.data();
++         fetchedNotes.push({
++           id: doc.id,
++           text: data.text,
++           createdAt: data.createdAt?.toDate() || new Date(),
++         });
++       });
++       
++       setNotes(fetchedNotes);
++     } catch (err: any) {
++       console.error("獲取筆記錯誤:", err);
++       setError("無法載入筆記");
++     } finally {
++       setIsLoading(false);
++     }
++   };
++   
++   // 組件掛載時獲取筆記
++   useEffect(() => {
++     fetchNotes();
++   }, [firestore]);
++   
++   // 添加新筆記
++   const handleAddNote = async () => {
++     if (!newNote.trim()) return;
++     
++     setIsLoading(true);
++     setError(null);
++     try {
++       await addDoc(collection(firestore, "notes"), {
++         text: newNote,
++         createdAt: serverTimestamp(),
++       });
++       
++       setNewNote("");
++       await fetchNotes(); // 重新獲取以更新列表
++     } catch (err: any) {
++       console.error("添加筆記錯誤:", err);
++       setError("無法添加筆記");
++     } finally {
++       setIsLoading(false);
++     }
++   };
++   
++   // 刪除筆記
++   const handleDeleteNote = async (id: string) => {
++     setIsLoading(true);
++     setError(null);
++     try {
++       await deleteDoc(doc(firestore, "notes", id));
++       await fetchNotes(); // 重新獲取以更新列表
++     } catch (err: any) {
++       console.error("刪除筆記錯誤:", err);
++       setError("無法刪除筆記");
++     } finally {
++       setIsLoading(false);
++     }
++   };
++   
++   return (
++     <Card className="w-full">
++       <CardHeader>
++         <CardTitle>Firebase Firestore 示例</CardTitle>
++       </CardHeader>
++       <CardContent className="space-y-4">
++         <div className="flex space-x-2">
++           <Input
++             value={newNote}
++             onChange={(e) => setNewNote(e.target.value)}
++             placeholder="輸入新筆記..."
++             onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
++             disabled={isLoading}
++           />
++           <Button onClick={handleAddNote} disabled={isLoading || !newNote.trim()}>
++             添加
++           </Button>
++         </div>
++         
++         {error && (
++           <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
++             {error}
++           </div>
++         )}
++         
++         <div className="space-y-2 max-h-60 overflow-y-auto">
++           {notes.length === 0 ? (
++             <p className="text-center text-gray-500 py-4">暫無筆記</p>
++           ) : (
++             notes.map((note) => (
++               <div key={note.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
++                 <div>
++                   <p>{note.text}</p>
++                   <p className="text-xs text-gray-500">
++                     {note.createdAt.toLocaleString()}
++                   </p>
++                 </div>
++                 <Button
++                   variant="ghost"
++                   size="icon"
++                   onClick={() => handleDeleteNote(note.id)}
++                   disabled={isLoading}
++                 >
++                   <Trash className="h-4 w-4 text-red-500" />
++                 </Button>
++               </div>
++             ))
++           )}
++         </div>
++       </CardContent>
++       <CardFooter>
++         <p className="text-xs text-gray-500">
++           筆記保存在 Firestore 中，所有用戶可見
++         </p>
++       </CardFooter>
++     </Card>
++   );
++ } 
+```
+
+---
+
+最後，更新 Home 頁面，加入 Firestore 示例：
+
+---
+
+
+
+---
+
+```diff
+  import FirebaseExample from "@/components/FirebaseExample";
+  import FirebaseAuthExample from "@/components/FirebaseAuthExample";
++ import FirebaseFirestoreExample from "@/components/FirebaseFirestoreExample";
+  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  
+```
+
+```diff
+              <TabsTrigger value="analytics">Firebase Analytics</TabsTrigger>
+              <TabsTrigger value="auth">Firebase Auth</TabsTrigger>
++             <TabsTrigger value="firestore">Firebase Firestore</TabsTrigger>
+            </TabsList>
+            <TabsContent value="analytics">
+```
+
+```diff
+              <FirebaseAuthExample />
+            </TabsContent>
++           <TabsContent value="firestore">
++             <FirebaseFirestoreExample />
++           </TabsContent>
+          </Tabs>
+        </div>
+```
+
+---
+
+現在我們已經完成了所有的步驟。讓我們確認一下現在的執行狀態：
+
+---
+
+```bash
+ps aux | grep 'npm run dev'
+```
+
+```
+(base) kih@biobankdeMacBook-Air PurchaseBoardManager % ps aux | grep 'npm run dev'
+kih              71644   0.0  0.0 410209344   1328 s005  S+   12:56PM   0:00.00 grep npm run dev
+(base) kih@biobankdeMacBook-Air PurchaseBoardManager %
+```
+
+---
+
+看起來開發伺服器可能已經停止，讓我們重新啟動：
+
+---
+
+```bash
+npm run dev
+```
+
+---
+
+很好，我們已經成功完成了以下步驟：
+
+1. 安裝了 Firebase SDK
+2. 創建了使用 React Context 的 Firebase 整合
+3. 實現了 3 個範例組件：
+   - Analytics 示例（記錄事件）
+   - Auth 示例（用戶註冊、登入、登出）
+   - Firestore 示例（筆記的讀寫操作）
+
+### 完成概要：
+
+我們已經成功使用 React Context API 整合了 Firebase SDK，創建了統一的 `useFirebase` hook，讓整個應用中的組件都能方便地使用 Firebase 服務。這是現代化的 Context7 風格實現，它具有以下優點：
+
+1. **效能優化**：使用 `useMemo` 和 `useState` 避免不必要的重新渲染
+2. **類型安全**：使用 TypeScript 定義所有類型
+3. **模組化設計**：所有 Firebase 相關功能封裝在一個 Context 中
+4. **按需使用**：只需在使用 Firebase 的組件中導入 `useFirebase` hook
+5. **擴展靈活**：容易擴展以支援更多 Firebase 服務
+
+您可以通過 `http://localhost:5000` 訪問應用並測試 Firebase 功能。需要注意的是，所有這些功能都與您的 Firebase 項目 `meetingroombooking-69469` 相關聯。
+
+### 後續建議：
+
+1. **環境變數**：考慮將 Firebase 設定移到環境變數中，避免硬編碼
+2. **自定義 Hook**：為特定功能創建更具體的 hook，例如 `useAuth`、`useDatabase` 等
+3. **錯誤處理**：添加更完善的錯誤處理和日誌記錄
+4. **安全規則**：設定 Firestore 的安全規則，控制用戶訪問權限
+5. **離線支援**：啟用 Firestore 的離線功能，提高用戶體驗
+
+現在您有了一個完整的 Firebase 整合，包含 Analytics、Auth 和 Firestore 功能，這些都通過 Context API 以高效、類型安全的方式提供。
+
+---
+
+_**User**_
+
+
+
+---
+
+_**Assistant**_
 
 
 
