@@ -1628,7 +1628,291 @@ useEffect(() => {
 
 ## 小結
 
-- 
+- 你前端顯示留言數的地方是正確的。
+- **請移除前端對 commentCount 的覆蓋與自行計算，直接用後端回傳的值即可。**
+
+這樣留言數就會即時正確顯示！
+
+如需完整修改範例，請告知！
+
+---
+
+_**User**_
+
+成功修復留言數，但是無法觀看留言內容
+
+---
+
+_**Assistant**_
+
+Read file: client/src/components/requestBoard/index.tsx
+
+---
+
+<details>
+            <summary>Searched codebase "CommentModal" • **1** results</summary>
+        
+| File |
+|------|
+| `undefined` |
+
+</details>
+
+---
+
+Read file: client/src/components/modals/CommentModal.tsx
+
+---
+
+你的留言內容是透過 `CommentModal` 這個元件顯示，並且會根據 `requestId` 來 fetch `/api/comments/:requestId`。  
+**只要 `requestId` 正確，且後端 `/api/comments/:requestId` 有回傳資料，留言內容就會顯示。**
+
+---
+
+## 你目前的問題可能是：
+
+1. **/api/comments/:requestId 沒有正確回傳資料**  
+   - 請確認你打開留言 modal 時，`requestId` 有正確傳遞，且 API 有回傳該需求的留言。
+
+2. **留言 API 路徑或資料結構有誤**  
+   - 你的 `useQuery` 是這樣寫的：
+     ```ts
+     useQuery({
+       queryKey: ['/api/comments', requestId],
+       enabled: !!requestId && open,
+     });
+     ```
+     這會呼叫 `/api/comments?requestId=xxx`（如果你的 queryClient 實作是這樣），但後端是 `/api/comments/:requestId`，要確保兩邊一致。
+
+3. **apiRequest 實作問題**  
+   - 請確認 `apiRequest` 能正確組合出 `/api/comments/1` 這種路徑，而不是 `/api/comments?requestId=1`。
+
+---
+
+## 修正建議
+
+### 1. 檢查 `apiRequest` 的實作
+
+確保 `apiRequest("GET", "/api/comments", { requestId })` 會發送到 `/api/comments/1`，而不是 `/api/comments?requestId=1`。
+
+如果不是，請改成：
+
+```ts
+useQuery({
+  queryKey: ['/api/comments', requestId],
+  queryFn: () => apiRequest("GET", `/api/comments/${requestId}`),
+  enabled: !!requestId && open,
+});
+```
+
+### 2. 檢查後端 `/api/comments/:requestId` 路由
+
+確保這個 API 能正確回傳該需求的留言。
+
+---
+
+## 小結
+
+- 你的留言內容顯示元件邏輯是正確的，**但要確保 API 路徑與資料流一致**。
+- 請檢查 `apiRequest` 是否正確呼叫 `/api/comments/${requestId}`。
+- 如需具體修正範例，請提供 `apiRequest` 的實作，或直接依上述建議修改 `useQuery`。
+
+如還有問題，請貼出 `apiRequest` 的程式碼或留言 API 的 network log！
+
+---
+
+_**User**_
+
+請確認 apiRequest 能正確組合出 /api/comments/1 這種路徑，而不是 /api/comments?requestId=1。
+
+---
+
+_**Assistant**_
+
+<details>
+            <summary>Searched codebase "apiRequest" • **0** results</summary>
+        
+No results found
+</details>
+
+---
+
+<details>
+            <summary>Searched codebase "apiRequest" • **25** results</summary>
+        
+| File | Lines |
+|------|-------|
+| `client/src/lib/queryClient.ts` | L8-24 |
+| `client/src/components/requestBoard/index.tsx` | L1-44 |
+| `client/src/lib/types.ts` | L30-39 |
+| `client/src/components/modals/CommentModal.tsx` | L49-78 |
+| `client/src/components/modals/NewRequestModal.tsx` | L50-88 |
+| `client/src/hooks/use-request-board.tsx` | L1-19 |
+| `client/src/components/requestBoard/RequestCard.tsx` | L1-26 |
+| `client/src/components/requestBoard/index.tsx` | L102-140 |
+| `client/src/components/requestBoard/RequestCard.tsx` | L26-90 |
+| `client/src/components/modals/PurchaseModal.tsx` | L47-100 |
+| `client/src/lib/types.ts` | L26-28 |
+| `client/src/lib/types.ts` | L28-30 |
+| `client/src/hooks/use-request-board.tsx` | L19-92 |
+| `client/src/components/requestBoard/FilterBar.tsx` | L1-17 |
+| `client/src/hooks/use-request-board.tsx` | L92-99 |
+| `client/src/components/requestBoard/index.tsx` | L44-102 |
+| `client/src/components/requestBoard/index.tsx` | L140-142 |
+| `client/src/components/modals/NewRequestModal.tsx` | L177-182 |
+| `client/src/components/modals/CommentModal.tsx` | L122-178 |
+| `client/src/components/modals/NewRequestModal.tsx` | L1-50 |
+| `client/src/hooks/use-request-board.tsx` | L99-104 |
+| `client/src/components/modals/CommentModal.tsx` | L178-201 |
+| `client/src/lib/types.ts` | L17-22 |
+| `client/src/components/modals/NewRequestModal.tsx` | L121-177 |
+| `client/src/components/layouts/MainLayout.tsx` | L1-6 |
+
+</details>
+
+---
+
+根據 `client/src/lib/queryClient.ts` 的實作，`apiRequest` 只會將你傳入的 `url` 直接當作 fetch 的路徑，不會自動組合 query string：
+
+```ts
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  const res = await fetch(url, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res;
+}
+```
+
+---
+
+## 你的留言內容查詢
+
+在 `CommentModal.tsx` 內，留言查詢的 useQuery 是：
+
+```ts
+const { 
+  data: comments, 
+  isLoading: isCommentsLoading,
+  isError: isCommentsError
+} = useQuery({
+  queryKey: ['/api/comments', requestId],
+  enabled: !!requestId && open,
+});
+```
+
+但這樣寫會預設呼叫 `/api/comments`，**不會自動變成 `/api/comments/1`**，除非你有自訂 queryFn。
+
+---
+
+## 正確寫法
+
+你應該這樣寫，明確指定 API 路徑：
+
+```ts
+const { 
+  data: comments, 
+  isLoading: isCommentsLoading,
+  isError: isCommentsError
+} = useQuery({
+  queryKey: ['/api/comments', requestId],
+  queryFn: () => apiRequest("GET", `/api/comments/${requestId}`).then(res => res.json()),
+  enabled: !!requestId && open,
+});
+```
+
+這樣才會正確呼叫 `/api/comments/1`，取得該需求的留言內容。
+
+---
+
+## 請修正 `CommentModal.tsx` 相關 useQuery
+
+### 修改前
+```ts
+const { 
+  data: comments, 
+  isLoading: isCommentsLoading,
+  isError: isCommentsError
+} = useQuery({
+  queryKey: ['/api/comments', requestId],
+  enabled: !!requestId && open,
+});
+```
+
+### 修改後
+```ts
+const { 
+  data: comments, 
+  isLoading: isCommentsLoading,
+  isError: isCommentsError
+} = useQuery({
+  queryKey: ['/api/comments', requestId],
+  queryFn: () => apiRequest("GET", `/api/comments/${requestId}`).then(res => res.json()),
+  enabled: !!requestId && open,
+});
+```
+
+---
+
+這樣就能正確取得並顯示留言內容了！
+
+如需完整修改範例，請告知！
+
+---
+
+_**User**_
+
+如果後端跑在 neon，部署的時候還需要 npm run db:push 初始化資料庫嗎？
+
+---
+
+_**Assistant**_
+
+是的，**即使後端資料庫是部署在 Neon serverless**，你在第一次部署或 schema 有變動時，**仍然需要執行 `npm run db:push` 來初始化資料庫**。
+
+---
+
+## 原因說明
+
+- `npm run db:push`（通常對應 Drizzle ORM 的 `drizzle-kit push`）會根據你的 schema 自動建立或同步 Neon 上的資料表結構。
+- Neon serverless 只是資料庫在雲端，**你還是需要主動把 schema 推送上去**，否則資料表不會自動建立。
+
+---
+
+## 部署建議
+
+1. **第一次部署到 Neon 時：**
+   - 請先設定好 `.env` 的 `DATABASE_URL` 指向 Neon。
+   - 執行：
+     ```bash
+     npm run db:push
+     ```
+   - 這會自動在 Neon 上建立所有需要的資料表。
+
+2. **每次 schema（`shared/schema.ts`）有變動時：**
+   - 也要重新執行 `npm run db:push`，確保 Neon 上的資料表結構同步。
+
+3. **CI/CD 自動化：**
+   - 你可以在 GitHub Actions 或 Render 的 build script 裡自動加上這步驟，確保每次部署都會同步 schema。
+
+---
+
+## 小結
+
+- **Neon 只是資料庫主機，資料表還是要你自己建立。**
+- **`npm run db:push` 必須執行，否則應用程式會因找不到資料表而出錯。**
+
+---
+
+如需自動化部署腳本或 CI/CD 整合範例，歡迎再詢問！
 
 ---
 

@@ -6,6 +6,10 @@ import { PurchaseModal } from "@/components/modals/PurchaseModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRequestBoard } from "@/hooks/use-request-board";
+import FirebaseExample from "@/components/FirebaseExample";
+import FirebaseAuthExample from "@/components/FirebaseAuthExample";
+import FirebaseFirestoreExample from "@/components/FirebaseFirestoreExample";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   const { 
@@ -28,6 +32,25 @@ export default function Home() {
         >
           <Plus className="mr-2 h-4 w-4" /> 新增需求
         </Button>
+      </div>
+
+      <div className="mb-6">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="analytics">Firebase Analytics</TabsTrigger>
+            <TabsTrigger value="auth">Firebase Auth</TabsTrigger>
+            <TabsTrigger value="firestore">Firebase Firestore</TabsTrigger>
+          </TabsList>
+          <TabsContent value="analytics">
+            <FirebaseExample />
+          </TabsContent>
+          <TabsContent value="auth">
+            <FirebaseAuthExample />
+          </TabsContent>
+          <TabsContent value="firestore">
+            <FirebaseFirestoreExample />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <RequestBoard />
